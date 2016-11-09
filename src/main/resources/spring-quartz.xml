@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:aop="http://www.springframework.org/schema/aop"
+	xsi:schemaLocation="http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-4.0.xsd
+		http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
+	<!-- 
+		常用CRON表达式:
+			0 */1 * * * ?       启动tomcat不运行,1分钟后运行第一次,以后每隔一分钟运行一次
+			0 0/1 * * * ?		(跟上面0 */1 * * * ?一样)启动tomcat不运行,1分钟后运行第一次,以后每隔一分钟运行一次
+			*/5 * * * * ?		 启动tomcat不运行,每隔5秒运行第一次,以后每隔一分钟运行一次
+	 -->
+
+
+	<!-- 扫描自动退房单 -->
+	<bean id="scanCheckoutTrigger" class="org.springframework.scheduling.quartz.CronTriggerFactoryBean">
+		<property name="jobDetail" ref="scanCheckoutJobDetail"></property>
+		<!-- <property name="cronExpression" value="0 5,15,25 12 * * ?"></property> --><!-- 中午12点5分/15分/25分运行 -->
+		<property name="cronExpression" value="0 0/1 * * * ?"></property><!-- 每分钟运行一次 -->
+	</bean>
+	<bean id="scanCheckoutJobDetail" class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
+		<property name="targetObject" ref="taskJob"></property>
+		<property name="targetMethod" value="scanCheckoutTime"></property><!-- 方法名 -->
+		<property name="concurrent" value="false" />
+	</bean>
+	
+	<!-- 扫描订单超时警告短信 -->
+	<bean id="scanWarningOrderJobDetail" class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
+		<property name="concurrent" value="false" />
+		<property name="targetObject" ref="taskJob"></property>
+		<property name="targetMethod" value="scanWarningOrder"></property><!-- 方法名 -->
+	</bean>
+	<bean id="scanWarningOrderTrigger" class="org.springframework.scheduling.quartz.CronTriggerFactoryBean">
+		<property name="jobDetail" ref="scanWarningOrderJobDetail"></property>
+		<property name="cronExpression" value="0 0/1 * * * ?"></property>
+	</bean>
+	
+	<!-- 扫描需要自动取消订单 -->
+	<bean id="scanCancelOrderJobDetail" class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
+		<property name="concurrent" value="false" />
+		<property name="targetObject" ref="taskJob"></property>
+		<property name="targetMethod" value="scanCancelOrder"></property><!-- 方法名 -->
+	</bean>
+	<bean id="scanCancelOrderTrigger" class="org.springframework.scheduling.quartz.CronTriggerFactoryBean">
+		<property name="jobDetail" ref="scanCancelOrderJobDetail"></property>
+		<property name="cronExpression" value="0 0/1 * * * ?"></property>
+	</bean>
+	
+	<!-- 扫描需要自动开始自动结束的停用单 -->
+	<bean id="scanAutoBeginAndEndDetail" class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
+		<property name="concurrent" value="false" />
+		<property name="targetObject" ref="taskJob"></property>
+		<property name="targetMethod" value="scanStopBeginOrEnd"></property><!-- 方法名 -->
+	</bean>
+	<bean id="scanAutoBeginAndEndTrigger" class="org.springframework.scheduling.quartz.CronTriggerFactoryBean">
+		<property name="jobDetail" ref="scanAutoBeginAndEndDetail"></property>
+		<property name="cronExpression" value="0 0/1 * * * ?"></property>
+	</bean>
+	
+	<!-- 扫描i_from_qhh表 -->
+	<bean id="scanSyncQhhDetail" class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
+		<property name="concurrent" value="false" />
+		<property name="targetObject" ref="syncInScaner"></property>
+		<property name="targetMethod" value="scanSyncQhh"></property><!-- 方法名 -->
+	</bean>
+	<bean id="scanSyncQhhTrigger" class="org.springframework.scheduling.quartz.CronTriggerFactoryBean">
+		<property name="jobDetail" ref="scanSyncQhhDetail"></property>
+		<property name="cronExpression" value="*/10 * * * * ?"></property>
+	</bean>
+	
+	<!-- 预退房扫描 -->
+	<bean id="scanPreCheckoutHintDetail" class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
+		<property name="concurrent" value="false" />
+		<property name="targetObject" ref="taskJob"></property>
+		<property name="targetMethod" value="scanPreCheckoutHint"></property><!-- 方法名 -->
+	</bean>
+	<bean id="scanPreCheckoutHintTrigger" class="org.springframework.scheduling.quartz.CronTriggerFactoryBean">
+		<property name="jobDetail" ref="scanPreCheckoutHintDetail"></property>
+		<property name="cronExpression" value="0 2,5,15,25 10 * * ?"></property><!-- 上午10点2分/5分/15分/25分运行 -->
+	</bean>
+	
+	<!-- 扫描续住自动办理入住-->
+	<bean id="scanOverstayCheckinDetail" class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
+		<property name="concurrent" value="false" />
+		<property name="targetObject" ref="taskJob"></property>
+		<property name="targetMethod" value="scanOverstayCheckin"></property><!-- 方法名 -->
+	</bean>
+	<bean id="scanOverstayCheckinTrigger" class="org.springframework.scheduling.quartz.CronTriggerFactoryBean">
+		<property name="jobDetail" ref="scanOverstayCheckinDetail"></property>
+<!-- 		<property name="cronExpression" value="*/1 * * * * ?"></property>测试用,每隔一秒运行一次
+ -->		<property name="cronExpression" value="0 5,15,25,45 12 * * ?"></property><!-- 每天中午12点5分,15分,25分,45分运行一次 -->
+	</bean>
+	
+	
+	<!-- 调度工厂 -->
+	<bean id="taskJob" class="cn.com.xbed.app.service.timer.TimerTasks" />
+	<bean id="syncInScaner" class="cn.com.xbed.app.service.syncin.SyncInScaner" />
+	<bean id="scheduler" class="org.springframework.scheduling.quartz.SchedulerFactoryBean">
+		<property name="triggers">
+			<list>
+				<ref bean="scanCheckoutTrigger" />
+				<ref bean="scanWarningOrderTrigger" />
+				<ref bean="scanCancelOrderTrigger" />
+				<ref bean="scanAutoBeginAndEndTrigger" />
+				<ref bean="scanSyncQhhTrigger" />
+				<ref bean="scanPreCheckoutHintTrigger" />
+				<ref bean="scanOverstayCheckinTrigger" />
+			</list>
+		</property>
+	</bean>
+</beans>

@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:tx="http://www.springframework.org/schema/tx"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+		http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-4.0.xsd
+		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-4.0.xsd">
+
+	<!-- 配置写数据库 -->
+	<context:property-placeholder location="classpath:db.properties" />
+	<bean id="dataSourceWrite" class="com.mchange.v2.c3p0.ComboPooledDataSource">
+		<property name="user" value="${jdbc.write.user}"></property>
+		<property name="password" value="${jdbc.write.password}"></property>
+		<property name="driverClass" value="${jdbc.write.driverClass}"></property>
+		<property name="jdbcUrl" value="${jdbc.write.jdbcUrl}"></property>
+
+		<property name="initialPoolSize" value="${jdbc.write.initPoolSize}"></property>
+		<property name="maxPoolSize" value="${jdbc.write.maxPoolSize}"></property>
+	</bean>
+
+	<bean id="jdbcTemplate" class="org.springframework.jdbc.core.JdbcTemplate">
+		<property name="dataSource" ref="dataSourceWrite"></property>
+	</bean>
+	<bean id="namedParameterJdbcTemplate"
+		class="org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate">
+		<constructor-arg name="dataSource" ref="dataSourceWrite"></constructor-arg>
+	</bean>
+
+
+
+	<!-- 配置写数据库 -->
+	<bean id="dataSourceRead" class="com.mchange.v2.c3p0.ComboPooledDataSource">
+		<property name="user" value="${jdbc.read.user}"></property>
+		<property name="password" value="${jdbc.read.password}"></property>
+		<property name="driverClass" value="${jdbc.read.driverClass}"></property>
+		<property name="jdbcUrl" value="${jdbc.read.jdbcUrl}"></property>
+
+		<property name="initialPoolSize" value="${jdbc.read.initPoolSize}"></property>
+		<property name="maxPoolSize" value="${jdbc.read.maxPoolSize}"></property>
+	</bean>
+
+	<bean id="jdbcTemplateRead" class="org.springframework.jdbc.core.JdbcTemplate">
+		<property name="dataSource" ref="dataSourceRead"></property>
+	</bean>
+	<bean id="namedParameterJdbcTemplateRead"
+		class="org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate">
+		<constructor-arg name="dataSource" ref="dataSourceRead"></constructor-arg>
+	</bean>
+</beans>
